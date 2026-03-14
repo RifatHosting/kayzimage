@@ -2,418 +2,949 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kayz AI - Image Scraper</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kayz AI - Ultimate Uploader</title>
+    <meta name="description" content="High-Speed Image Uploader with Multiple Server Backends">
+    <meta name="theme-color" content="#000000">
+    
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Inter', 'system-ui', 'sans-serif'],
+                        'mono': ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        'kayz': {
+                            900: '#0a0a0a',
+                            800: '#111111',
+                            700: '#1a1a1a',
+                            600: '#222222',
+                            500: '#333333',
+                            400: '#444444',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
     <style>
+        /* =========================================
+           1. ROOT VARIABLES & RESET
+           ========================================= */
         :root {
-            --bg: #030305;
-            --surface: #0a0a0d;
-            --border: #111116;
-            --text-main: #e4e4e7;
-            --text-muted: #71717a;
-            --accent: #10b981; /* Emerald Green */
-            --accent-dim: rgba(16, 185, 129, 0.1);
+            --bg-base: #000000;
+            --bg-surface: #080808;
+            --bg-elevated: #111111;
+            --border-color: #222222;
+            --text-primary: #FFFFFF;
+            --text-secondary: #A0A0A0;
+            --text-muted: #555555;
+            --accent-color: #FFFFFF;
+            --success: #10B981;
+            --error: #EF4444;
+            --warning: #F59E0B;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html {
+            scroll-behavior: smooth;
         }
 
         body {
             font-family: 'Inter', sans-serif;
-            background-color: var(--bg);
-            color: var(--text-main);
+            background-color: var(--bg-base);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            line-height: 1.5;
+        }
+
+        /* =========================================
+           2. SCROLLBAR CUSTOMIZATION
+           ========================================= */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        /* =========================================
+           3. ANIMATIONS
+           ========================================= */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes pulse-border {
+            0%, 100% { border-color: var(--border-color); }
+            50% { border-color: var(--text-primary); }
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .animate-fade-up { animation: fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+        .animate-spin { animation: spin 1s linear infinite; }
+        .animate-slide-in { animation: slideInRight 0.4s ease-out forwards; }
+
+        /* =========================================
+           4. LAYOUT & COMPONENTS
+           ========================================= */
+        
+        /* App Container */
+        .app-container {
+            display: flex;
+            flex-direction: column;
             min-height: 100vh;
         }
 
-        .mono { font-family: 'JetBrains Mono', monospace; }
-
-        /* Scrollbar */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: var(--bg); }
-        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
-
-        /* Layout Grid */
-        .main-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 2rem;
-        }
-        @media (min-width: 768px) {
-            .main-grid { grid-template-columns: 1.2fr 1fr; }
+        /* Header */
+        .app-header {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            backdrop-filter: blur(12px);
+            background: rgba(0, 0, 0, 0.8);
+            border-bottom: 1px solid var(--border-color);
         }
 
-        /* Upload Area */
+        /* Upload Zone */
         .upload-zone {
-            border: 1px dashed var(--border);
-            background: var(--surface);
-            transition: all 0.3s ease;
             position: relative;
+            border: 2px dashed var(--border-color);
+            background: linear-gradient(145deg, rgba(20,20,20,0.6), rgba(0,0,0,0.8));
+            transition: all 0.3s ease;
             overflow: hidden;
         }
+
         .upload-zone::before {
             content: '';
             position: absolute;
             inset: 0;
-            background: radial-gradient(circle at center, var(--accent-dim), transparent 70%);
+            background: radial-gradient(circle at center, rgba(255,255,255,0.03), transparent 70%);
             opacity: 0;
             transition: opacity 0.3s;
-        }
-        .upload-zone:hover::before, .upload-zone.active::before { opacity: 1; }
-        .upload-zone.active { border-color: var(--accent); transform: scale(1.01); }
-
-        /* Buttons */
-        .btn-main {
-            background: var(--accent);
-            color: #000;
-            font-weight: 600;
-            padding: 0.75rem 1.5rem;
-            border-radius: 6px;
-            transition: all 0.2s;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            border: none;
-            cursor: pointer;
-        }
-        .btn-main:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(-1px); box-shadow: 0 4px 12px var(--accent-dim); }
-        .btn-main:disabled { opacity: 0.5; cursor: not-allowed; }
-
-        .btn-ghost {
-            background: transparent;
-            border: 1px solid var(--border);
-            color: var(--text-main);
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
-
-        /* Result Card */
-        .result-box {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            overflow: hidden;
-            animation: fadeIn 0.4s ease-out;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            pointer-events: none;
         }
 
-        .url-display {
-            background: #000;
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            padding: 0.75rem;
-            font-size: 0.8rem;
-            color: var(--accent);
-            word-break: break-all;
+        .upload-zone:hover::before {
+            opacity: 1;
         }
 
-        /* Loading */
+        .upload-zone.active {
+            border-color: var(--accent-color);
+            background: rgba(20,20,20,0.9);
+            animation: pulse-border 2s infinite;
+        }
+
+        .upload-zone.success {
+            border-color: var(--success);
+        }
+
+        .upload-zone.error {
+            border-color: var(--error);
+        }
+
+        /* Result Cards */
+        .result-card {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .result-card:hover {
+            border-color: #333;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        /* Spinner */
         .spinner {
-            width: 24px; height: 24px;
-            border: 2px solid rgba(255,255,255,0.1);
-            border-top-color: var(--accent);
+            width: 24px;
+            height: 24px;
+            border: 2px solid var(--border-color);
+            border-top-color: var(--accent-color);
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
         }
-        @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* Toast */
-        .toast {
-            position: fixed;
-            bottom: 1.5rem;
-            left: 50%;
-            transform: translateX(-50%) translateY(5rem);
-            background: #fff;
-            color: #000;
-            padding: 0.75rem 1.5rem;
-            border-radius: 6px;
-            font-weight: 500;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            opacity: 0;
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            z-index: 1000;
+        /* Buttons */
+        .btn-primary {
+            background: white;
+            color: black;
+            font-weight: 600;
+            transition: all 0.2s ease;
         }
-        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        .btn-primary:hover { background: #e5e5e5; transform: translateY(-1px); }
+        .btn-primary:active { transform: translateY(0); }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border-color);
+            color: white;
+            transition: all 0.2s ease;
+        }
+        .btn-secondary:hover { background: rgba(255,255,255,0.1); border-color: #444; }
+
+        /* Log Console */
+        .console-log {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            line-height: 1.6;
+            color: var(--text-muted);
+        }
+
+        .log-entry {
+            padding: 2px 0;
+            border-bottom: 1px solid #111;
+        }
+        .log-entry:last-child { border-bottom: none; }
+
+        /* Tab System */
+        .tab-btn {
+            position: relative;
+            color: var(--text-muted);
+            padding: 8px 16px;
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            color: white;
+        }
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: white;
+        }
+
+        /* Modal Overlay */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.9);
+            backdrop-filter: blur(8px);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        /* History Grid */
+        .history-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 8px;
+        }
+
+        /* Responsive Image Preview */
+        .img-preview-container {
+            position: relative;
+            width: 100%;
+            padding-top: 100%; /* 1:1 Aspect Ratio */
+            background: #111;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .img-preview-container img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s;
+        }
+        .img-preview-container:hover img {
+            transform: scale(1.05);
+        }
+
+        /* Utility */
+        .text-gradient {
+            background: linear-gradient(90deg, #fff, #888);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
     </style>
 </head>
-<body class="p-4 md:p-8 flex flex-col items-center">
+<body>
 
-    <div class="w-full max-w-5xl">
-        <!-- Header -->
-        <header class="flex items-center gap-3 mb-8">
-            <div class="w-10 h-10 rounded bg-[var(--accent)] flex items-center justify-center text-black font-bold shadow-lg shadow-[var(--accent-dim)]">K</div>
-            <div>
-                <h1 class="text-lg font-bold">Kayz AI Scraper</h1>
-                <p class="text-[10px] text-[var(--text-muted)] mono">SYSTEM STABILIZED V3.2</p>
+    <!-- APP CONTAINER -->
+    <div class="app-container">
+        
+        <!-- HEADER -->
+        <header class="app-header">
+            <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <!-- GANTI LOGO DISINI -->
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Google_2015_logo.svg/1024px-Google_2015_logo.svg.png" class="w-7 h-7 object-contain rounded bg-white/10 p-0.5" alt="Logo">
+                    <div>
+                        <h1 class="text-base font-semibold tracking-tight">Kayz AI Uploader</h1>
+                        <p class="text-[10px] text-neutral-500 mono tracking-wider">SYSTEM V4.0 ULTIMATE</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-3">
+                    <div class="hidden md:flex items-center gap-2 text-[10px] text-neutral-500 mono px-2 py-1 border border-neutral-800 rounded">
+                        <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                        <span>CONNECTED</span>
+                    </div>
+                    <button id="historyBtn" class="p-2 hover:bg-white/5 rounded transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </button>
+                </div>
             </div>
         </header>
 
-        <!-- Main Grid -->
-        <div class="main-grid">
-            <!-- Left Column -->
-            <div class="space-y-6">
-                <!-- Upload Zone -->
-                <div 
-                    id="dropZone" 
-                    class="upload-zone rounded-xl p-8 min-h-[250px] flex flex-col items-center justify-center cursor-pointer"
-                    role="button"
-                    tabindex="0"
-                >
-                    <input type="file" id="fileInput" class="hidden" accept="image/*">
+        <!-- MAIN CONTENT -->
+        <main class="flex-1 max-w-6xl w-full mx-auto p-4 md:p-6">
+            
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
+                
+                <!-- LEFT PANEL: Upload & Config -->
+                <div class="lg:col-span-7 flex flex-col gap-5">
                     
-                    <div id="idleState" class="text-center">
-                        <div class="w-12 h-12 rounded bg-black border border-[var(--border)] flex items-center justify-center mx-auto mb-4">
-                            <svg class="w-6 h-6 text-[var(--accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
-                            </svg>
-                        </div>
-                        <p class="font-medium text-sm mb-1">Drop Image Here</p>
-                        <p class="text-xs text-[var(--text-muted)]">Max 10MB (JPG, PNG, GIF)</p>
+                    <!-- Tab Navigation -->
+                    <div class="flex border-b border-neutral-800">
+                        <button class="tab-btn active" data-tab="upload">Upload File</button>
+                        <button class="tab-btn" data-tab="url">Remote URL</button>
                     </div>
 
-                    <div id="loadingState" class="hidden flex-col items-center">
-                        <div class="spinner mb-3"></div>
-                        <p class="text-sm text-[var(--text-muted)]" id="loadingText">Processing...</p>
+                    <!-- Upload Tab Content -->
+                    <div id="tabUpload" class="tab-content">
+                        <div id="dropZone" class="upload-zone rounded-xl p-10 min-h-[350px] flex flex-col items-center justify-center cursor-pointer relative">
+                            <input type="file" id="fileInput" class="hidden" accept="image/*,video/*,audio/*,.pdf" multiple>
+                            
+                            <!-- Idle State -->
+                            <div id="idleState" class="text-center z-10">
+                                <div class="w-16 h-16 rounded-full border border-neutral-700 flex items-center justify-center mx-auto mb-5 text-neutral-500">
+                                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+                                </div>
+                                <h3 class="text-xl font-semibold mb-1 text-gradient">Drop Files Here</h3>
+                                <p class="text-sm text-neutral-500 mb-4">or click to browse</p>
+                                <div class="flex flex-wrap justify-center gap-2 text-[10px]">
+                                    <span class="px-2 py-1 bg-neutral-900 rounded border border-neutral-800">JPG</span>
+                                    <span class="px-2 py-1 bg-neutral-900 rounded border border-neutral-800">PNG</span>
+                                    <span class="px-2 py-1 bg-neutral-900 rounded border border-neutral-800">GIF</span>
+                                    <span class="px-2 py-1 bg-neutral-900 rounded border border-neutral-800">MP4</span>
+                                    <span class="px-2 py-1 bg-neutral-900 rounded border border-neutral-800">PDF</span>
+                                </div>
+                            </div>
+
+                            <!-- Loading State -->
+                            <div id="loadingState" class="hidden absolute inset-0 bg-black/90 flex flex-col items-center justify-center z-20 p-6 text-center">
+                                <div class="spinner w-10 h-10 rounded-full mb-4"></div>
+                                <p class="text-sm font-medium mb-1" id="loadingMainText">Initializing Engine...</p>
+                                <p class="text-[10px] text-neutral-500 mono" id="loadingSubText">Preparing streams...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- URL Tab Content -->
+                    <div id="tabUrl" class="tab-content hidden">
+                        <div class="bg-neutral-900 border border-neutral-800 rounded-xl p-5">
+                            <h3 class="text-sm font-semibold mb-3">Remote File Upload</h3>
+                            <p class="text-xs text-neutral-500 mb-4">Paste a direct URL to an image or file. Our server will download and re-upload it to your selected hosts.</p>
+                            <div class="flex gap-2">
+                                <input type="url" id="urlInput" placeholder="https://example.com/image.jpg" class="flex-1 bg-black border border-neutral-800 rounded px-3 py-2 text-xs mono focus:outline-none focus:border-neutral-600">
+                                <button id="urlUploadBtn" class="btn-primary px-4 py-2 rounded text-xs">Upload</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Console Log Section -->
+                    <div class="bg-neutral-900 border border-neutral-800 rounded-xl overflow-hidden">
+                        <div class="flex items-center justify-between px-4 py-2 border-b border-neutral-800 bg-black">
+                            <span class="text-[10px] font-bold text-neutral-500 tracking-wider uppercase">System Console</span>
+                            <button id="clearLogBtn" class="text-[10px] text-neutral-500 hover:text-white">Clear</button>
+                        </div>
+                        <div id="consoleBox" class="h-40 overflow-y-auto p-3 console-log">
+                            <!-- Logs go here -->
+                        </div>
                     </div>
                 </div>
 
-                <!-- Scrape Input -->
-                <div class="flex gap-2">
-                    <input 
-                        type="url" 
-                        id="urlInput" 
-                        placeholder="Paste image URL to scrape..."
-                        class="flex-1 bg-[var(--surface)] border border-[var(--border)] rounded px-3 py-2 text-sm focus:outline-none focus:border-[var(--accent)] mono"
-                    >
-                    <button id="scrapeBtn" class="btn-main text-sm py-2 px-4">Scrape</button>
+                <!-- RIGHT PANEL: Results & Config -->
+                <div class="lg:col-span-5 flex flex-col gap-5">
+                    
+                    <!-- Result Section (Initially Hidden) -->
+                    <div id="resultSection" class="hidden flex flex-col gap-4">
+                        
+                        <!-- Preview Header -->
+                        <div class="flex items-center gap-3 animate-fade-up">
+                            <div class="w-16 h-16 rounded bg-neutral-900 border border-neutral-800 overflow-hidden flex-shrink-0">
+                                <img id="resultThumbnail" src="" class="w-full h-full object-cover">
+                            </div>
+                            <div class="flex-1 overflow-hidden">
+                                <p class="text-sm font-medium truncate" id="resultFileName">filename.jpg</p>
+                                <p class="text-[10px] text-neutral-500 mono" id="resultFileSize">0 KB</p>
+                            </div>
+                            <button id="resetBtn" class="text-[10px] text-neutral-400 border border-neutral-700 px-3 py-1 rounded hover:bg-neutral-800 transition-colors">NEW</button>
+                        </div>
+
+                        <!-- Result List -->
+                        <div class="flex flex-col gap-2" id="resultList">
+                            <!-- Dynamic Results -->
+                        </div>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div id="emptyState" class="flex-1 flex flex-col items-center justify-center text-center border border-dashed border-neutral-800 rounded-xl min-h-[300px] p-6">
+                        <div class="w-12 h-12 rounded border border-neutral-800 flex items-center justify-center mb-4 text-neutral-700">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                        </div>
+                        <p class="text-neutral-600 text-sm">Upload results will appear here</p>
+                    </div>
+
+                    <!-- Config Panel -->
+                    <div class="bg-neutral-900 border border-neutral-800 rounded-xl p-4">
+                        <h3 class="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-3">Upload Configuration</h3>
+                        
+                        <div class="space-y-3">
+                            <label class="flex items-center justify-between cursor-pointer group">
+                                <span class="text-sm text-neutral-400">Pixhost (Auto-Proxy)</span>
+                                <input type="checkbox" checked class="toggle-checkbox" data-server="pixhost">
+                            </label>
+                            <label class="flex items-center justify-between cursor-pointer group">
+                                <span class="text-sm text-neutral-400">Uguu (Auto-Proxy)</span>
+                                <input type="checkbox" checked class="toggle-checkbox" data-server="uguu">
+                            </label>
+                            <label class="flex items-center justify-between cursor-pointer group">
+                                <span class="text-sm text-neutral-400">TmpFiles (Direct)</span>
+                                <input type="checkbox" checked class="toggle-checkbox" data-server="tmpfiles">
+                            </label>
+                            <label class="flex items-center justify-between cursor-pointer group">
+                                <span class="text-sm text-neutral-400">Telegraph (Direct)</span>
+                                <input type="checkbox" checked class="toggle-checkbox" data-server="telegraph">
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Info Stats -->
+                    <div class="grid grid-cols-2 gap-3 text-[10px] mono text-neutral-600">
+                        <div class="flex justify-between border-b border-neutral-900 pb-1">
+                            <span>Max Size</span>
+                            <span class="text-neutral-500">20 MB</span>
+                        </div>
+                        <div class="flex justify-between border-b border-neutral-900 pb-1">
+                            <span>Timeout</span>
+                            <span class="text-neutral-500">60s</span>
+                        </div>
+                    </div>
                 </div>
             </div>
+        </main>
 
-            <!-- Right Column -->
-            <div class="space-y-4">
-                <div id="emptyState" class="h-full min-h-[300px] flex items-center justify-center border border-dashed border-[var(--border)] rounded-xl text-center p-6">
-                    <div>
-                        <p class="text-[var(--text-muted)] text-sm">Result will appear here</p>
-                        <p class="text-xs text-[var(--text-muted)] mt-1 opacity-50">Brand: kayzai.org (via filename)</p>
-                    </div>
+        <!-- FOOTER -->
+        <footer class="border-t border-neutral-900 py-4 text-center text-[10px] text-neutral-700 mt-auto">
+            Kayz AI Uploader Engine &copy; 2024 - All Rights Reserved
+        </footer>
+    </div>
+
+    <!-- HISTORY MODAL -->
+    <div id="historyModal" class="modal-overlay hidden">
+        <div class="bg-neutral-900 border border-neutral-700 rounded-xl w-full max-w-lg max-h-[80vh] flex flex-col animate-fade-up">
+            <div class="flex items-center justify-between p-4 border-b border-neutral-800">
+                <h3 class="font-semibold">Upload History</h3>
+                <button id="closeModalBtn" class="p-1 hover:bg-white/10 rounded">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <div class="p-4 overflow-y-auto flex-1">
+                <div id="historyContent" class="history-grid">
+                    <!-- History items -->
                 </div>
-
-                <div id="resultCard" class="result-box hidden">
-                    <div class="aspect-video bg-black/50 flex items-center justify-center overflow-hidden">
-                        <img id="previewImg" src="" class="max-w-full max-h-full object-contain" alt="Preview">
-                    </div>
-                    <div class="p-4 space-y-3">
-                        <div class="flex justify-between text-[10px] text-[var(--text-muted)]">
-                            <span id="fileName">filename</span>
-                            <span id="fileSize">0 KB</span>
-                        </div>
-
-                        <div>
-                            <div class="flex justify-between items-center mb-1">
-                                <span class="text-[10px] text-[var(--text-muted)] uppercase">Generated Link</span>
-                                <button id="copyBtn" class="text-[10px] bg-white text-black px-2 py-0.5 rounded font-bold hover:opacity-80 transition-opacity">COPY</button>
-                            </div>
-                            <div class="url-display mono">
-                                <span id="resultUrl">...</span>
-                            </div>
-                        </div>
-
-                        <div class="flex gap-2 pt-2">
-                            <button id="openBtn" class="btn-ghost flex-1 text-xs">Open Link</button>
-                            <button id="newBtn" class="btn-main flex-1 text-xs py-2">New Upload</button>
-                        </div>
-                    </div>
-                </div>
+            </div>
+            <div class="p-3 border-t border-neutral-800 flex justify-end gap-2">
+                <button id="clearHistoryBtn" class="text-xs text-red-400 hover:text-red-300">Clear All History</button>
             </div>
         </div>
     </div>
 
-    <!-- Toast Element -->
-    <div id="toast" class="toast">Success!</div>
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-white text-black px-4 py-2 rounded shadow-xl text-sm font-medium z-[200] transition-all duration-300 opacity-0 translate-y-4 pointer-events-none">
+        Message
+    </div>
 
+    <!-- JAVASCRIPT ENGINE -->
     <script>
-        // --- UTILITIES ---
-        const $ = (id) => document.getElementById(id);
-        const formatSize = (bytes) => {
-            if (bytes < 1024) return bytes + ' B';
-            if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
-            return (bytes / 1048576).toFixed(1) + ' MB';
-        };
-        const generateBrandName = () => {
-            // Format: Kayz_AI_randomstring.jpg
-            const char = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-            let id = "";
-            for(let i=0; i<6; i++) id += char.charAt(Math.floor(Math.random() * char.length));
-            return `Kayz_AI_${id}.jpg`;
-        };
-        const showToast = (msg) => {
-            const t = $('toast');
-            t.textContent = msg;
-            t.classList.add('show');
-            setTimeout(() => t.classList.remove('show'), 2000);
+        /**
+         * KAYZ AI UPLOADER ENGINE
+         * Version: 4.0 Ultimate
+         * Architecture: Modular MVP
+         */
+
+        // --- 1. STATE MANAGEMENT ---
+        const AppState = {
+            history: JSON.parse(localStorage.getItem('kayz_history') || '[]'),
+            selectedServers: ['pixhost', 'uguu', 'tmpfiles', 'telegraph'],
+            uploadInProgress: false
         };
 
-        // --- DOM ELEMENTS ---
-        const dropZone = $('dropZone');
-        const fileInput = $('fileInput');
-        const idleState = $('idleState');
-        const loadingState = $('loadingState');
-        const loadingText = $('loadingText');
-        const resultCard = $('resultCard');
-        const emptyState = $('emptyState');
-        const previewImg = $('previewImg');
-        const resultUrl = $('resultUrl');
-        const fileName = $('fileName');
-        const fileSize = $('fileSize');
+        // --- 2. DOM SELECTORS ---
+        const UI = {
+            dropZone: document.getElementById('dropZone'),
+            fileInput: document.getElementById('fileInput'),
+            idleState: document.getElementById('idleState'),
+            loadingState: document.getElementById('loadingState'),
+            loadingMainText: document.getElementById('loadingMainText'),
+            loadingSubText: document.getElementById('loadingSubText'),
+            consoleBox: document.getElementById('consoleBox'),
+            resultSection: document.getElementById('resultSection'),
+            emptyState: document.getElementById('emptyState'),
+            resultList: document.getElementById('resultList'),
+            resultThumbnail: document.getElementById('resultThumbnail'),
+            resultFileName: document.getElementById('resultFileName'),
+            resultFileSize: document.getElementById('resultFileSize'),
+            resetBtn: document.getElementById('resetBtn'),
+            historyBtn: document.getElementById('historyBtn'),
+            historyModal: document.getElementById('historyModal'),
+            historyContent: document.getElementById('historyContent'),
+            closeModalBtn: document.getElementById('closeModalBtn'),
+            clearHistoryBtn: document.getElementById('clearHistoryBtn'),
+            clearLogBtn: document.getElementById('clearLogBtn'),
+            toast: document.getElementById('toast'),
+            urlInput: document.getElementById('urlInput'),
+            urlUploadBtn: document.getElementById('urlUploadBtn'),
+            tabBtns: document.querySelectorAll('.tab-btn'),
+            tabUpload: document.getElementById('tabUpload'),
+            tabUrl: document.getElementById('tabUrl')
+        };
 
-        // --- EVENT LISTENERS ---
-        dropZone.addEventListener('click', () => fileInput.click());
-        dropZone.addEventListener('keydown', (e) => { if(e.key === 'Enter') fileInput.click(); });
-        
-        // Drag & Drop Styling
-        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('active'); });
-        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('active'));
-        
-        // Drop Handler
-        dropZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropZone.classList.remove('active');
-            if (e.dataTransfer.files.length > 0) {
-                processFile(e.dataTransfer.files[0]);
+        // --- 3. UTILITIES ---
+        const Utils = {
+            formatBytes(bytes, decimals = 2) {
+                if (!+bytes) return '0 Bytes'
+                const k = 1024
+                const dm = decimals < 0 ? 0 : decimals
+                const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB']
+                const i = Math.floor(Math.log(bytes) / Math.log(k))
+                return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
+            },
+
+            generateId() {
+                return 'kayz_' + Math.random().toString(36).substr(2, 9);
+            },
+
+            log(message, type = 'info') {
+                const colors = { info: '#888', success: '#10b981', error: '#ef4444', warn: '#f59e0b' };
+                const time = new Date().toLocaleTimeString('en-US', { hour12: false });
+                const el = document.createElement('div');
+                el.className = 'log-entry animate-fade-in';
+                el.innerHTML = `<span style="color:#444">[${time}]</span> <span style="color:${colors[type]}">${message}</span>`;
+                UI.consoleBox.prepend(el);
+            },
+
+            showToast(message) {
+                UI.toast.textContent = message;
+                UI.toast.classList.remove('opacity-0', 'translate-y-4');
+                UI.toast.classList.add('opacity-100', 'translate-y-0');
+                setTimeout(() => {
+                    UI.toast.classList.add('opacity-0', 'translate-y-4');
+                    UI.toast.classList.remove('opacity-100', 'translate-y-0');
+                }, 3000);
+            },
+
+            updateUIState(mode) {
+                if (mode === 'loading') {
+                    UI.idleState.classList.add('hidden');
+                    UI.loadingState.classList.remove('hidden');
+                    UI.resultSection.classList.add('hidden');
+                    UI.emptyState.classList.add('hidden');
+                    UI.dropZone.classList.remove('success', 'error');
+                } else if (mode === 'result') {
+                    UI.idleState.classList.remove('hidden');
+                    UI.loadingState.classList.add('hidden');
+                    UI.resultSection.classList.remove('hidden');
+                    UI.emptyState.classList.add('hidden');
+                } else {
+                    UI.idleState.classList.remove('hidden');
+                    UI.loadingState.classList.add('hidden');
+                    UI.resultSection.classList.add('hidden');
+                    UI.emptyState.classList.remove('hidden');
+                }
             }
-        });
+        };
 
-        // File Input Change
-        fileInput.addEventListener('change', (e) => {
-            if (e.target.files.length > 0) processFile(e.target.files[0]);
-        });
-
-        // URL Scrape
-        $('scrapeBtn').addEventListener('click', () => {
-            const url = $('urlInput').value.trim();
-            if(url) processUrl(url);
-        });
-
-        // Action Buttons
-        $('copyBtn').addEventListener('click', () => {
-            navigator.clipboard.writeText(resultUrl.textContent);
-            showToast('Link berhasil disalin!');
-        });
-        $('openBtn').addEventListener('click', () => window.open(resultUrl.textContent, '_blank'));
-        $('newBtn').addEventListener('click', () => {
-            resultCard.classList.add('hidden');
-            emptyState.classList.remove('hidden');
-            $('urlInput').value = '';
-            fileInput.value = '';
-        });
-
-        // --- CORE LOGIC ---
-
-        function toggleLoading(show, text = "Processing...") {
-            idleState.classList.toggle('hidden', show);
-            loadingState.classList.toggle('hidden', !show);
-            if(show) loadingText.textContent = text;
-        }
-
-        async function processFile(file) {
-            if (!file.type.startsWith('image/')) return showToast('File harus gambar!');
-            if (file.size > 10000000) return showToast('Maksimal 10MB!');
-
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                previewImg.src = e.target.result;
-                uploadImage(e.target.result, file.type);
-            };
-            reader.readAsDataURL(file);
-        }
-
-        async function processUrl(url) {
-            toggleLoading(true, "Fetching image...");
+        // --- 4. UPLOAD ENGINE ---
+        const UploadEngine = {
             
-            // Proxy untuk bypass CORS
-            const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
-            
-            try {
-                const res = await fetch(proxyUrl);
-                const blob = await res.blob();
+            // Proxy List for CORS bypassing
+            proxies: [
+                'https://corsproxy.io/?',
+                'https://api.allorigins.win/raw?url='
+            ],
+
+            // Smart Fetch with Proxy Fallback
+            async smartFetch(url, formData, config = {}) {
+                // Try direct first
+                try {
+                    const res = await fetch(url, { method: 'POST', body: formData, ...config });
+                    if (res.ok) return res;
+                } catch (e) { /* Ignore direct, proceed to proxy */ }
+
+                // Try proxies
+                for (let proxy of this.proxies) {
+                    try {
+                        // Note: FormData POST through generic proxies can be tricky.
+                        // corsproxy.io usually handles it well.
+                        const res = await fetch(proxy + encodeURIComponent(url), { method: 'POST', body: formData, ...config });
+                        if (res.ok) return res;
+                    } catch (e) { /* Continue */ }
+                }
+                throw new Error("All connection attempts failed (Direct & Proxy)");
+            },
+
+            // SERVER 1: Pixhost
+            async uploadPixhost(fileBlob, fileName) {
+                Utils.log('Attempting Pixhost...', 'info');
+                const fd = new FormData();
+                fd.append('img', fileBlob, fileName);
                 
-                if (!blob.type.startsWith('image/')) throw new Error("Not an image");
+                try {
+                    // Pixhost needs specific headers sometimes, but form-data usually handles it.
+                    // We use smartFetch to bypass CORS.
+                    const res = await this.smartFetch('https://pixhost.to/upload', fd);
+                    const text = await res.text(); // Might return HTML/JSON mix
+                    
+                    // Try parsing JSON
+                    try {
+                        const json = JSON.parse(text);
+                        if (json.status === 'ok' && json.images && json.images[0]) {
+                            return { name: 'Pixhost', url: json.images[0].image_url };
+                        }
+                    } catch (e) {
+                        // Fallback: Regex parsing if response is HTML
+                        const match = text.match(/"(https?:\/\/pixhost\.to\/show\/[^"]+)"/);
+                        if (match && match[1]) {
+                           return { name: 'Pixhost (Page)', url: match[1] };
+                        }
+                    }
+                    throw new Error('Invalid response');
+                } catch (e) {
+                    Utils.log('Pixhost Failed: ' + e.message, 'error');
+                    return null;
+                }
+            },
+
+            // SERVER 2: Uguu
+            async uploadUguu(fileBlob, fileName) {
+                Utils.log('Attempting Uguu...', 'info');
+                const fd = new FormData();
+                fd.append('files[]', fileBlob, fileName);
+
+                try {
+                    const res = await this.smartFetch('https://uguu.se/upload.php', fd);
+                    const json = await res.json();
+                    if (json.success && json.files && json.files[0]) {
+                        return { name: 'Uguu', url: json.files[0].url };
+                    }
+                    throw new Error('Invalid response');
+                } catch (e) {
+                    Utils.log('Uguu Failed: ' + e.message, 'error');
+                    return null;
+                }
+            },
+
+            // SERVER 3: TmpFiles (Direct/CORS Friendly)
+            async uploadTmpFiles(fileBlob, fileName) {
+                Utils.log('Attempting TmpFiles...', 'info');
+                const fd = new FormData();
+                fd.append('file', fileBlob, fileName);
+
+                try {
+                    const res = await fetch('https://tmpfiles.org/api/v1/upload', { method: 'POST', body: fd });
+                    const json = await res.json();
+                    if (json.status === 'success' && json.data) {
+                        const directUrl = json.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
+                        return { name: 'TmpFiles', url: directUrl };
+                    }
+                    throw new Error('Invalid response');
+                } catch (e) {
+                    Utils.log('TmpFiles Failed: ' + e.message, 'error');
+                    return null;
+                }
+            },
+
+            // SERVER 4: Telegraph (Direct/CORS friendly)
+            async uploadTelegraph(fileBlob, fileName) {
+                Utils.log('Attempting Telegraph...', 'info');
+                const fd = new FormData();
+                fd.append('file', fileBlob, fileName);
+
+                try {
+                    const res = await fetch('https://telegra.ph/upload', { method: 'POST', body: fd });
+                    const json = await res.json();
+                    if (json[0] && json[0].src) {
+                        return { name: 'Telegraph', url: 'https://telegra.ph' + json[0].src };
+                    }
+                    throw new Error('Invalid response');
+                } catch (e) {
+                    Utils.log('Telegraph Failed: ' + e.message, 'error');
+                    return null;
+                }
+            },
+
+            // MAIN PROCESSOR
+            async processFile(file) {
+                if (AppState.uploadInProgress) return;
+                AppState.uploadInProgress = true;
+
+                Utils.updateUIState('loading');
+                UI.loadingMainText.textContent = "Processing file...";
+                UI.loadingSubText.textContent = file.name;
+                Utils.log(`Starting upload for: ${file.name}`, 'info');
+
+                // Prepare Preview
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = e => UI.resultThumbnail.src = e.target.result;
+                    reader.readAsDataURL(file);
+                } else {
+                    UI.resultThumbnail.src = 'https://upload.wikimedia.org/wikipedia/commons/8/87/PDF_file_icon.svg';
+                }
+                UI.resultFileName.textContent = file.name;
+                UI.resultFileSize.textContent = Utils.formatBytes(file.size);
+
+                // Run uploads in parallel based on configuration
+                const promises = [];
                 
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    previewImg.src = e.target.result;
-                    uploadImage(e.target.result, blob.type);
-                };
-                reader.readAsDataURL(blob);
-            } catch (err) {
-                toggleLoading(false);
-                showToast("Gagal mengambil gambar dari URL");
-                console.error(err);
-            }
-        }
+                if (AppState.selectedServers.includes('pixhost')) promises.push(this.uploadPixhost(file, file.name));
+                if (AppState.selectedServers.includes('uguu')) promises.push(this.uploadUguu(file, file.name));
+                if (AppState.selectedServers.includes('tmpfiles')) promises.push(this.uploadTmpFiles(file, file.name));
+                if (AppState.selectedServers.includes('telegraph')) promises.push(this.uploadTelegraph(file, file.name));
 
-        async function uploadImage(base64, mimeType) {
-            toggleLoading(true, "Connecting to Server...");
+                const results = await Promise.all(promises);
+                const validResults = results.filter(r => r !== null);
 
-            // Parsing Base64
-            const parts = base64.split(',');
-            const bstr = atob(parts[1]);
-            let n = bstr.length;
-            const u8arr = new Uint8Array(n);
-            while(n--){ u8arr[n] = bstr.charCodeAt(n); }
+                if (validResults.length > 0) {
+                    Utils.log(`Success: ${validResults.length} servers responded.`, 'success');
+                    this.displayResults(validResults);
+                    
+                    // Add to history
+                    this.addToHistory(file.name, UI.resultThumbnail.src, validResults[0].url);
+                    
+                    UI.dropZone.classList.add('success');
+                } else {
+                    Utils.log('CRITICAL: All servers failed.', 'error');
+                    Utils.showToast("Upload failed. Check logs.");
+                    UI.dropZone.classList.add('error');
+                    Utils.updateUIState('idle');
+                }
 
-            // Tentukan extension
-            let ext = "jpg";
-            if (mimeType.includes("png")) ext = "png";
-            if (mimeType.includes("gif")) ext = "gif";
-            if (mimeType.includes("webp")) ext = "webp";
+                AppState.uploadInProgress = false;
+            },
 
-            // --- RAHASIA "BRANDING" ---
-            // Kita ubah nama file secara manual sebelum upload
-            // Nama file ini akan menjadi bagian dari URL Telegraph
-            const customFileName = generateBrandName().replace('.jpg', `.${ext}`);
-            
-            const blob = new Blob([u8arr], { type: mimeType });
-
-            // UPLOAD KE TELEGRAPH
-            const formData = new FormData();
-            formData.append('file', blob, customFileName); // Inject custom filename here
-
-            try {
-                const res = await fetch('https://telegra.ph/upload', {
-                    method: 'POST',
-                    body: formData
+            displayResults(links) {
+                UI.resultList.innerHTML = '';
+                
+                links.forEach((item, index) => {
+                    const div = document.createElement('div');
+                    div.className = 'result-card p-3 rounded-lg animate-fade-up';
+                    div.style.animationDelay = `${index * 0.1}s`;
+                    
+                    div.innerHTML = `
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-[10px] font-bold text-neutral-500 uppercase">${item.name}</span>
+                            <div class="flex gap-1">
+                                <button class="text-[10px] bg-white/10 px-2 py-0.5 rounded hover:bg-white/20 transition-colors copy-btn" data-url="${item.url}">COPY</button>
+                                <a href="${item.url}" target="_blank" class="text-[10px] bg-white/5 px-2 py-0.5 rounded hover:bg-white/10 transition-colors">OPEN</a>
+                            </div>
+                        </div>
+                        <div class="text-[11px] text-green-400 mono break-all">${item.url}</div>
+                    `;
+                    
+                    UI.resultList.appendChild(div);
                 });
 
-                const data = await res.json();
+                Utils.updateUIState('result');
+                Utils.showToast("Upload Complete!");
+            },
 
-                if (data && data[0] && data[0].src) {
-                    const finalUrl = "https://telegra.ph" + data[0].src;
-                    
-                    // Update UI
-                    toggleLoading(false);
-                    fileName.textContent = customFileName;
-                    fileSize.textContent = formatSize(blob.size);
-                    resultUrl.textContent = finalUrl;
-                    
-                    emptyState.classList.add('hidden');
-                    resultCard.classList.remove('hidden');
-                    
-                    showToast("Upload Sukses!");
-                } else {
-                    throw new Error("Server response invalid");
+            addToHistory(name, thumb, url) {
+                const item = { id: Utils.generateId(), name, thumb, url, date: new Date().toISOString() };
+                AppState.history.unshift(item);
+                if (AppState.history.length > 20) AppState.history.pop();
+                localStorage.setItem('kayz_history', JSON.stringify(AppState.history));
+            },
+
+            renderHistory() {
+                if (AppState.history.length === 0) {
+                    UI.historyContent.innerHTML = '<p class="text-neutral-600 text-xs col-span-full text-center">No history found.</p>';
+                    return;
                 }
-            } catch (err) {
-                toggleLoading(false);
-                showToast("Upload gagal, coba lagi.");
-                console.error(err);
+
+                UI.historyContent.innerHTML = AppState.history.map(item => `
+                    <div class="bg-neutral-800 rounded overflow-hidden border border-neutral-700 hover:border-neutral-500 transition-colors cursor-pointer" onclick="window.open('${item.url}', '_blank')">
+                        <div class="img-preview-container">
+                            <img src="${item.thumb}" onerror="this.src='https://via.placeholder.com/100'">
+                        </div>
+                        <div class="p-2">
+                            <p class="text-[10px] text-neutral-400 truncate">${item.name}</p>
+                        </div>
+                    </div>
+                `).join('');
             }
-        }
+        };
+
+        // --- 5. EVENT LISTENERS ---
+        
+        // Drag & Drop
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            UI.dropZone.addEventListener(eventName, e => {
+                e.preventDefault();
+                e.stopPropagation();
+            }, false);
+        });
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            UI.dropZone.addEventListener(eventName, () => UI.dropZone.classList.add('active'), false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            UI.dropZone.addEventListener(eventName, () => UI.dropZone.classList.remove('active'), false);
+        });
+
+        UI.dropZone.addEventListener('drop', e => {
+            const files = e.dataTransfer.files;
+            if (files.length > 0) UploadEngine.processFile(files[0]);
+        });
+
+        UI.dropZone.addEventListener('click', () => UI.fileInput.click());
+        UI.fileInput.addEventListener('change', e => {
+            if (e.target.files.length > 0) UploadEngine.processFile(e.target.files[0]);
+        });
+
+        // URL Upload
+        UI.urlUploadBtn.addEventListener('click', async () => {
+            const url = UI.urlInput.value.trim();
+            if (!url) return;
+            
+            Utils.log('Fetching remote URL...', 'info');
+            Utils.updateUIState('loading');
+            UI.loadingMainText.textContent = "Fetching remote file...";
+
+            try {
+                // Use proxy to fetch remote file to bypass CORS if needed
+                const res = await fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`);
+                const blob = await res.blob();
+                const name = url.split('/').pop() || 'downloaded_file';
+                
+                // Create a File object from blob
+                const file = new File([blob], name, { type: blob.type });
+                UploadEngine.processFile(file);
+            } catch (e) {
+                Utils.log('Failed to fetch remote URL', 'error');
+                Utils.showToast("Failed to fetch URL");
+                Utils.updateUIState('idle');
+            }
+        });
+
+        // Tabs
+        UI.tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                UI.tabBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                const target = btn.getAttribute('data-tab');
+                UI.tabUpload.classList.toggle('hidden', target !== 'upload');
+                UI.tabUrl.classList.toggle('hidden', target !== 'url');
+            });
+        });
+
+        // Reset
+        UI.resetBtn.addEventListener('click', () => {
+            Utils.updateUIState('idle');
+            UI.fileInput.value = '';
+            UI.dropZone.classList.remove('success', 'error');
+        });
+
+        // Copy Buttons (Event Delegation)
+        UI.resultList.addEventListener('click', e => {
+            if (e.target.classList.contains('copy-btn')) {
+                const url = e.target.getAttribute('data-url');
+                navigator.clipboard.writeText(url);
+                Utils.showToast("Link copied!");
+                e.target.textContent = "COPIED";
+                setTimeout(() => e.target.textContent = "COPY", 1500);
+            }
+        });
+
+        // History Modal
+        UI.historyBtn.addEventListener('click', () => {
+            UploadEngine.renderHistory();
+            UI.historyModal.classList.remove('hidden');
+        });
+
+        UI.closeModalBtn.addEventListener('click', () => UI.historyModal.classList.add('hidden'));
+        
+        UI.clearHistoryBtn.addEventListener('click', () => {
+            AppState.history = [];
+            localStorage.removeItem('kayz_history');
+            UploadEngine.renderHistory();
+            Utils.showToast("History cleared");
+        });
+
+        UI.clearLogBtn.addEventListener('click', () => UI.consoleBox.innerHTML = '');
+
+        // Toggle Checkboxes
+        document.querySelectorAll('.toggle-checkbox').forEach(chk => {
+            chk.addEventListener('change', (e) => {
+                const server = e.target.getAttribute('data-server');
+                if (e.target.checked) {
+                    if (!AppState.selectedServers.includes(server)) AppState.selectedServers.push(server);
+                } else {
+                    AppState.selectedServers = AppState.selectedServers.filter(s => s !== server);
+                }
+            });
+        });
+
+        // --- 6. INITIALIZATION ---
+        Utils.log('System Initialized', 'success');
+        Utils.log('Ready to upload', 'info');
+
     </script>
 </body>
 </html>
