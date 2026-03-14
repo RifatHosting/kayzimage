@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kayz AI - Direct Public URL</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #00f2fe;
+            --secondary: #4facfe;
+            --bg-color: #0d1117;
+            --box-bg: #161b22;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-color);
+            color: #ffffff;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: var(--box-bg);
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+            border: 1px solid #30363d;
+        }
+
+        h1 {
+            margin-top: 0;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 600;
+        }
+
+        p {
+            color: #8b949e;
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+
+        .upload-area {
+            border: 2px dashed #30363d;
+            border-radius: 10px;
+            padding: 40px 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .upload-area:hover, .upload-area.dragover {
+            border-color: var(--primary);
+            background-color: rgba(79, 172, 254, 0.05);
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .btn {
+            background: linear-gradient(to right, var(--secondary), var(--primary));
+            border: none;
+            padding: 10px 20px;
+            color: white;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin-top: 15px;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+        }
+
+        /* Result Area */
+        #result-area {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .preview-img {
+            max-width: 100%;
+            max-height: 250px;
+            object-fit: contain;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #30363d;
+        }
+
+        .url-box {
+            display: flex;
+            align-items: center;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 5px;
+            padding: 5px;
+            margin-bottom: 15px;
+        }
+
+        .url-box input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #58a6ff;
+            padding: 10px;
+            font-family: monospace;
+            outline: none;
+        }
+
+        .copy-btn {
+            background: #238636;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .copy-btn:hover {
+            background: #2ea043;
+        }
+
+        .loader {
+            display: none;
+            color: var(--primary);
+            font-weight: bold;
+            margin-top: 20px;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s ease-in-out infinite;
+            margin-bottom: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Kayz AI</h1>
+        <p>Bypass Upload - Direct Link Tanpa Eror (No API Key)</p>
+
+        <!-- Area Upload -->
+        <div class="upload-area" id="drop-zone">
+            <div style="font-size: 40px; margin-bottom: 10px;">🛡️</div>
+            <h3 style="margin: 10px 0; color: #c9d1d9;">Klik / Drop Gambar Disini</h3>
+            <span style="color: #8b949e; font-size: 12px;">Anti-Eror • Maks 10MB • Auto Fallback</span>
+            <input type="file" id="fileInput" accept="image/*">
+        </div>
+
+        <div class="loader" id="loader">
+            <div class="spinner"></div>
+            <div id="loading-text">Kayz AI sedang memproses...</div>
+        </div>
+
+        <!-- Area Hasil -->
+        <div id="result-area">
+            <img src="" alt="Preview" class="preview-img" id="previewImg">
+            <div class="url-box">
+                <input type="text" id="urlOutput" readonly>
+                <button class="copy-btn" onclick="copyURL()">Copy</button>
+            </div>
+            <button class="btn" onclick="resetUpload()">Upload Lainnya</button>
+        </div>
+    </div>
+
+    <script>
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('fileInput');
+        const resultArea = document.getElementById('result-area');
+        const previewImg = document.getElementById('previewImg');
+        const urlOutput = document.getElementById('urlOutput');
+        const loader = document.getElementById('loader');
+        const loadingText = document.getElementById('loading-text');
+
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length) {
+                processFile(e.dataTransfer.files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', function() {
+            if (this.files.length) {
+                processFile(this.files[0]);
+            }
+        });
+
+        async function processFile(file) {
+            if (!file.type.startsWith('image/')) {
+                alert('Hanya bisa upload gambar!');
+                return;
+            }
+
+            dropZone.style.display = 'none';
+            loader.style.display = 'block';
+
+            // ====================================================
+            // SERVER 1: Pomf Clone (No API Key, Direct Image Link)
+            // ====================================================
+            try {
+                loadingText.innerText = "Tembus Server 1 (Lain.la)...";
+                const form1 = new FormData();
+                form1.append('files[]', file);
+
+                const res1 = await fetch('https://pomf.lain.la/upload.php', { method: 'POST', body: form1 });
+                if (res1.ok) {
+                    const data1 = await res1.json();
+                    if (data1.success) {
+                        tampilkanHasil(data1.files[0].url);
+                        return; // Berhenti jika sukses
+                    }
+                }
+            } catch (err) { console.log("Server 1 diblokir, lanjut ke Server 2"); }
+
+            // ====================================================
+            // SERVER 2: Uguu Open Source (No API Key, Direct Link)
+            // ====================================================
+            try {
+                loadingText.innerText = "Tembus Server 2 (Uguu)...";
+                const form2 = new FormData();
+                form2.append('files[]', file);
+
+                const res2 = await fetch('https://uguu.se/upload.php', { method: 'POST', body: form2 });
+                if (res2.ok) {
+                    const data2 = await res2.json();
+                    if (data2.success) {
+                        tampilkanHasil(data2.files[0].url);
+                        return; // Berhenti jika sukses
+                    }
+                }
+            } catch (err) { console.log("Server 2 diblokir, lanjut ke Server Cadangan"); }
+
+            // ====================================================
+            // SERVER 3: Cadangan Permanen (Hidden Public Auth)
+            // ====================================================
+            try {
+                loadingText.innerText = "Tembus Server 3 (Permanent Backup)...";
+                const form3 = new FormData();
+                form3.append('image', file);
+
+                // Menggunakan public auth key (bawaan dari script agar kamu tidak perlu buat akun)
+                const publicAuth = '37632ce60d002ac16d6cc9859f993d07'; 
+                const res3 = await fetch(`https://api.imgbb.com/1/upload?key=${publicAuth}`, { method: 'POST', body: form3 });
+                if (res3.ok) {
+                    const data3 = await res3.json();
+                    if (data3.success) {
+                        tampilkanHasil(data3.data.url);
+                        return; // Berhenti jika sukses
+                    }
+                }
+            } catch (err) { console.log("Semua Server Gagal"); }
+
+            // Jika semua gagal (misal karena jaringan internet mati)
+            alert('Koneksi terputus! Pastikan internetmu stabil dan coba lagi.');
+            resetUpload();
+        }
+
+        function tampilkanHasil(url) {
+            previewImg.src = url;
+            urlOutput.value = url;
+            
+            loader.style.display = 'none';
+            resultArea.style.display = 'block';
+        }
+
+        function copyURL() {
+            urlOutput.select();
+            document.execCommand('copy');
+            
+            const copyBtn = document.querySelector('.copy-btn');
+            copyBtn.innerText = 'Copied!';
+            copyBtn.style.background = '#00f2fe';
+            copyBtn.style.color = '#000';
+            
+            setTimeout(() => {
+                copyBtn.innerText = 'Copy';
+                copyBtn.style.background = '#238636';
+                copyBtn.style.color = 'white';
+            }, 2000);
+        }
+
+        function resetUpload() {
+            resultArea.style.display = 'none';
+            loader.style.display = 'none';
+            dropZone.style.display = 'block';
+            fileInput.value = '';
+        }
+    </script>
+</body>
+</html>
