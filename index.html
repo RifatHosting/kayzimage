@@ -5,322 +5,262 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kayz AI - Image Scraper</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #09090b;
-            --bg-alt: #111113;
-            --card: #18181b;
-            --border: #27272a;
-            --fg: #fafafa;
-            --muted: #71717a;
-            --accent: #10b981; /* Emerald */
-            --accent-glow: rgba(16, 185, 129, 0.4);
+            --bg: #030305;
+            --surface: #0a0a0d;
+            --border: #111116;
+            --text-main: #e4e4e7;
+            --text-muted: #71717a;
+            --accent: #10b981; /* Emerald Green */
+            --accent-dim: rgba(16, 185, 129, 0.1);
         }
 
         body {
-            font-family: 'Space Grotesk', sans-serif;
+            font-family: 'Inter', sans-serif;
             background-color: var(--bg);
-            color: var(--fg);
-            overflow-x: hidden;
+            color: var(--text-main);
+            min-height: 100vh;
         }
 
-        .mono { font-family: 'IBM Plex Mono', monospace; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
 
-        /* Background Effects */
-        .bg-grid {
-            background-image: 
-                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-            background-size: 40px 40px;
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+
+        /* Layout Grid */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+        @media (min-width: 768px) {
+            .main-grid { grid-template-columns: 1.2fr 1fr; }
         }
 
-        .glow-orb {
-            position: fixed;
-            width: 600px;
-            height: 600px;
-            background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
-            border-radius: 50%;
-            top: -200px;
-            right: -200px;
-            pointer-events: none;
-            z-index: 0;
-            opacity: 0.4;
-            animation: pulse 10s infinite alternate;
-        }
-
-        @keyframes pulse {
-            from { transform: scale(1); opacity: 0.3; }
-            to { transform: scale(1.2); opacity: 0.5; }
-        }
-
-        /* Upload Zone */
-        .upload-box {
-            position: relative;
+        /* Upload Area */
+        .upload-zone {
             border: 1px dashed var(--border);
-            background: linear-gradient(145deg, rgba(24, 24, 27, 0.6), rgba(0,0,0,0.4));
-            backdrop-filter: blur(12px);
+            background: var(--surface);
             transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
         }
-
-        .upload-box:hover, .upload-box.active {
-            border-color: var(--accent);
-            box-shadow: 0 0 30px -10px var(--accent-glow);
-            background: linear-gradient(145deg, rgba(24, 24, 27, 0.9), rgba(0,0,0,0.6));
+        .upload-zone::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at center, var(--accent-dim), transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s;
         }
-
-        .upload-box.active .icon-upload { transform: scale(1.1); }
+        .upload-zone:hover::before, .upload-zone.active::before { opacity: 1; }
+        .upload-zone.active { border-color: var(--accent); transform: scale(1.01); }
 
         /* Buttons */
         .btn-main {
             background: var(--accent);
-            color: var(--bg);
+            color: #000;
             font-weight: 600;
-            padding: 12px 24px;
-            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
             transition: all 0.2s;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            gap: 0.5rem;
+            border: none;
+            cursor: pointer;
         }
-
-        .btn-main:hover:not(:disabled) {
-            filter: brightness(1.1);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px var(--accent-glow);
-        }
-
+        .btn-main:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(-1px); box-shadow: 0 4px 12px var(--accent-dim); }
         .btn-main:disabled { opacity: 0.5; cursor: not-allowed; }
 
         .btn-ghost {
             background: transparent;
             border: 1px solid var(--border);
-            color: var(--fg);
-            padding: 10px 20px;
-            border-radius: 8px;
+            color: var(--text-main);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
             transition: all 0.2s;
         }
-
-        .btn-ghost:hover {
-            border-color: var(--accent);
-            color: var(--accent);
-            background: rgba(16, 185, 129, 0.05);
-        }
+        .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
 
         /* Result Card */
-        .result-card {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            animation: slideUp 0.4s ease-out;
-        }
-
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .url-display {
-            background: var(--bg);
+        .result-box {
+            background: var(--surface);
             border: 1px solid var(--border);
             border-radius: 8px;
-            font-family: 'IBM Plex Mono', monospace;
-            font-size: 12px;
-            color: var(--accent);
-            padding: 12px;
-            word-break: break-all;
-            position: relative;
+            overflow: hidden;
+            animation: fadeIn 0.4s ease-out;
         }
-
-        /* Loading Spinner */
-        .spinner {
-            width: 36px;
-            height: 36px;
-            border: 3px solid var(--border);
-            border-top-color: var(--accent);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
-
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        /* Toast */
-        .toast-container {
-            position: fixed;
-            bottom: 24px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 9999;
-            width: 90%;
-            max-width: 400px;
-        }
-
-        .toast {
-            background: var(--card);
-            border: 1px solid var(--accent);
-            padding: 12px 20px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            animation: toastIn 0.3s ease-out;
-        }
-
-        @keyframes toastIn {
+        @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* History Item */
-        .history-item {
-            background: var(--card);
+        .url-display {
+            background: #000;
             border: 1px solid var(--border);
-            transition: all 0.2s;
-        }
-        .history-item:hover {
-            border-color: var(--accent);
-            transform: translateX(4px);
+            border-radius: 4px;
+            padding: 0.75rem;
+            font-size: 0.8rem;
+            color: var(--accent);
+            word-break: break-all;
         }
 
-        /* Responsive Fixes */
-        @media (max-width: 640px) {
-            .main-grid { grid-template-columns: 1fr !important; }
+        /* Loading */
+        .spinner {
+            width: 24px; height: 24px;
+            border: 2px solid rgba(255,255,255,0.1);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
         }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 1.5rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(5rem);
+            background: #fff;
+            color: #000;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            font-weight: 500;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 1000;
+        }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
     </style>
 </head>
-<body class="min-h-screen bg-grid">
-    <div class="glow-orb"></div>
+<body class="p-4 md:p-8 flex flex-col items-center">
 
-    <div class="relative z-10 max-w-5xl mx-auto px-4 py-8">
+    <div class="w-full max-w-5xl">
         <!-- Header -->
-        <header class="flex items-center justify-between mb-12">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-lg bg-[var(--accent)] flex items-center justify-center text-black font-bold">
-                    K
-                </div>
-                <div>
-                    <h1 class="font-bold text-lg leading-tight">Kayz AI Scraper</h1>
-                    <p class="text-xs text-[var(--muted)] mono">v3.0 Stable</p>
-                </div>
-            </div>
-            <div class="hidden sm:flex items-center gap-2 text-xs text-[var(--muted)] bg-[var(--card)] px-3 py-1.5 rounded-full border border-[var(--border)]">
-                <span class="w-2 h-2 rounded-full bg-[var(--accent)] animate-pulse"></span>
-                No API Key Mode
+        <header class="flex items-center gap-3 mb-8">
+            <div class="w-10 h-10 rounded bg-[var(--accent)] flex items-center justify-center text-black font-bold shadow-lg shadow-[var(--accent-dim)]">K</div>
+            <div>
+                <h1 class="text-lg font-bold">Kayz AI Scraper</h1>
+                <p class="text-[10px] text-[var(--text-muted)] mono">SYSTEM STABILIZED V3.2</p>
             </div>
         </header>
 
-        <!-- Main Content -->
-        <div class="main-grid grid grid-cols-1 md:grid-cols-5 gap-8">
-            <!-- Left: Upload Area -->
-            <div class="md:col-span-3 space-y-6">
-                <div>
-                    <h2 class="text-3xl md:text-4xl font-bold mb-2">Image to URL</h2>
-                    <p class="text-[var(--muted)]">Upload langsung atau scrape dari URL manapun. Tanpa batas, tanpa API key.</p>
-                </div>
-
-                <!-- Drop Zone -->
+        <!-- Main Grid -->
+        <div class="main-grid">
+            <!-- Left Column -->
+            <div class="space-y-6">
+                <!-- Upload Zone -->
                 <div 
                     id="dropZone" 
-                    class="upload-box rounded-2xl p-10 text-center cursor-pointer"
+                    class="upload-zone rounded-xl p-8 min-h-[250px] flex flex-col items-center justify-center cursor-pointer"
                     role="button"
                     tabindex="0"
                 >
                     <input type="file" id="fileInput" class="hidden" accept="image/*">
-                    <div id="idleState">
-                        <div class="icon-upload w-16 h-16 mx-auto mb-4 rounded-xl bg-[var(--accent)]/10 flex items-center justify-center transition-transform">
-                            <svg class="w-8 h-8 text-[var(--accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 16v2a2 2 0 002 2h14a2 2 0 002-2v-2M13 8l-4 4m0 0l4 4m-4-4h12"/>
+                    
+                    <div id="idleState" class="text-center">
+                        <div class="w-12 h-12 rounded bg-black border border-[var(--border)] flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-6 h-6 text-[var(--accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
                             </svg>
                         </div>
-                        <p class="font-medium text-lg">Drop Image Here</p>
-                        <p class="text-sm text-[var(--muted)] mt-1">atau klik untuk pilih (Max 10MB)</p>
+                        <p class="font-medium text-sm mb-1">Drop Image Here</p>
+                        <p class="text-xs text-[var(--text-muted)]">Max 10MB (JPG, PNG, GIF)</p>
                     </div>
 
-                    <div id="loadingState" class="hidden flex-col items-center justify-center py-4">
-                        <div class="spinner mb-4"></div>
-                        <p class="text-sm text-[var(--muted)]" id="loadingText">Processing...</p>
+                    <div id="loadingState" class="hidden flex-col items-center">
+                        <div class="spinner mb-3"></div>
+                        <p class="text-sm text-[var(--text-muted)]" id="loadingText">Processing...</p>
                     </div>
                 </div>
 
-                <!-- URL Scrape Input -->
-                <div class="flex gap-3">
+                <!-- Scrape Input -->
+                <div class="flex gap-2">
                     <input 
                         type="url" 
                         id="urlInput" 
                         placeholder="Paste image URL to scrape..."
-                        class="flex-1 bg-[var(--card)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[var(--accent)] mono"
+                        class="flex-1 bg-[var(--surface)] border border-[var(--border)] rounded px-3 py-2 text-sm focus:outline-none focus:border-[var(--accent)] mono"
                     >
-                    <button id="scrapeBtn" class="btn-main">Scrape</button>
+                    <button id="scrapeBtn" class="btn-main text-sm py-2 px-4">Scrape</button>
                 </div>
             </div>
 
-            <!-- Right: Result -->
-            <div class="md:col-span-2">
-                <div id="resultCard" class="result-card p-6 hidden">
-                    <div class="aspect-video bg-black/20 rounded-lg overflow-hidden mb-4 flex items-center justify-center">
+            <!-- Right Column -->
+            <div class="space-y-4">
+                <div id="emptyState" class="h-full min-h-[300px] flex items-center justify-center border border-dashed border-[var(--border)] rounded-xl text-center p-6">
+                    <div>
+                        <p class="text-[var(--text-muted)] text-sm">Result will appear here</p>
+                        <p class="text-xs text-[var(--text-muted)] mt-1 opacity-50">Brand: kayzai.org (via filename)</p>
+                    </div>
+                </div>
+
+                <div id="resultCard" class="result-box hidden">
+                    <div class="aspect-video bg-black/50 flex items-center justify-center overflow-hidden">
                         <img id="previewImg" src="" class="max-w-full max-h-full object-contain" alt="Preview">
                     </div>
-                    
-                    <div class="flex items-center justify-between text-xs text-[var(--muted)] mb-3">
-                        <span id="fileName">filename.jpg</span>
-                        <span id="fileSize">0 KB</span>
-                    </div>
+                    <div class="p-4 space-y-3">
+                        <div class="flex justify-between text-[10px] text-[var(--text-muted)]">
+                            <span id="fileName">filename</span>
+                            <span id="fileSize">0 KB</span>
+                        </div>
 
-                    <label class="text-xs text-[var(--muted)] mb-1 block">Direct URL</label>
-                    <div class="url-display mb-4">
-                        <span id="resultUrl">...</span>
-                    </div>
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-[10px] text-[var(--text-muted)] uppercase">Generated Link</span>
+                                <button id="copyBtn" class="text-[10px] bg-white text-black px-2 py-0.5 rounded font-bold hover:opacity-80 transition-opacity">COPY</button>
+                            </div>
+                            <div class="url-display mono">
+                                <span id="resultUrl">...</span>
+                            </div>
+                        </div>
 
-                    <div class="grid grid-cols-2 gap-2">
-                        <button id="copyBtn" class="btn-main text-sm w-full">Copy URL</button>
-                        <button id="openBtn" class="btn-ghost text-sm w-full">Open Link</button>
-                    </div>
-                </div>
-
-                <!-- Empty State -->
-                <div id="emptyState" class="h-full flex items-center justify-center text-center p-6 border border-dashed border-[var(--border)] rounded-2xl min-h-[300px]">
-                    <div>
-                        <svg class="w-12 h-12 mx-auto text-[var(--muted)] mb-3 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                        </svg>
-                        <p class="text-[var(--muted)] text-sm">Hasil akan muncul di sini</p>
+                        <div class="flex gap-2 pt-2">
+                            <button id="openBtn" class="btn-ghost flex-1 text-xs">Open Link</button>
+                            <button id="newBtn" class="btn-main flex-1 text-xs py-2">New Upload</button>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-
-        <!-- History -->
-        <div class="mt-12">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="font-semibold">Riwayat</h3>
-                <button id="clearBtn" class="text-xs text-[var(--muted)] hover:text-red-400 transition-colors">Clear All</button>
-            </div>
-            <div id="historyList" class="space-y-2"></div>
-        </div>
     </div>
 
-    <!-- Toast Container -->
-    <div id="toastContainer" class="toast-container hidden">
-        <div class="toast">
-            <svg class="w-5 h-5 text-[var(--accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-            </svg>
-            <span id="toastText" class="text-sm font-medium">Success</span>
-        </div>
-    </div>
+    <!-- Toast Element -->
+    <div id="toast" class="toast">Success!</div>
 
     <script>
-        // Utils
+        // --- UTILITIES ---
         const $ = (id) => document.getElementById(id);
-        const formatSize = (bytes) => bytes < 1024 ? bytes + ' B' : bytes < 1048576 ? (bytes / 1024).toFixed(1) + ' KB' : (bytes / 1048576).toFixed(1) + ' MB';
+        const formatSize = (bytes) => {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / 1048576).toFixed(1) + ' MB';
+        };
+        const generateBrandName = () => {
+            // Format: Kayz_AI_randomstring.jpg
+            const char = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+            let id = "";
+            for(let i=0; i<6; i++) id += char.charAt(Math.floor(Math.random() * char.length));
+            return `Kayz_AI_${id}.jpg`;
+        };
+        const showToast = (msg) => {
+            const t = $('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 2000);
+        };
 
-        // Elements
+        // --- DOM ELEMENTS ---
         const dropZone = $('dropZone');
         const fileInput = $('fileInput');
-        const urlInput = $('urlInput');
-        const scrapeBtn = $('scrapeBtn');
         const idleState = $('idleState');
         const loadingState = $('loadingState');
         const loadingText = $('loadingText');
@@ -330,212 +270,150 @@
         const resultUrl = $('resultUrl');
         const fileName = $('fileName');
         const fileSize = $('fileSize');
-        const copyBtn = $('copyBtn');
-        const openBtn = $('openBtn');
-        const historyList = $('historyList');
-        const clearBtn = $('clearBtn');
-        const toastContainer = $('toastContainer');
-        const toastText = $('toastText');
 
-        // State
-        let history = JSON.parse(localStorage.getItem('kayz_scraper_history') || '[]');
-        renderHistory();
-
-        // Event Listeners
+        // --- EVENT LISTENERS ---
         dropZone.addEventListener('click', () => fileInput.click());
-        dropZone.addEventListener('keydown', e => { if(e.key==='Enter') fileInput.click(); });
+        dropZone.addEventListener('keydown', (e) => { if(e.key === 'Enter') fileInput.click(); });
         
-        dropZone.addEventListener('dragover', e => {
-            e.preventDefault();
-            dropZone.classList.add('active');
-        });
+        // Drag & Drop Styling
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('active'); });
         dropZone.addEventListener('dragleave', () => dropZone.classList.remove('active'));
-        dropZone.addEventListener('drop', e => {
+        
+        // Drop Handler
+        dropZone.addEventListener('drop', (e) => {
             e.preventDefault();
             dropZone.classList.remove('active');
-            if(e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]);
+            if (e.dataTransfer.files.length > 0) {
+                processFile(e.dataTransfer.files[0]);
+            }
         });
 
-        fileInput.addEventListener('change', e => {
-            if(e.target.files[0]) processFile(e.target.files[0]);
+        // File Input Change
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) processFile(e.target.files[0]);
         });
 
-        scrapeBtn.addEventListener('click', processUrl);
-        urlInput.addEventListener('keydown', e => { if(e.key==='Enter') processUrl(); });
+        // URL Scrape
+        $('scrapeBtn').addEventListener('click', () => {
+            const url = $('urlInput').value.trim();
+            if(url) processUrl(url);
+        });
 
-        copyBtn.addEventListener('click', () => {
+        // Action Buttons
+        $('copyBtn').addEventListener('click', () => {
             navigator.clipboard.writeText(resultUrl.textContent);
-            showToast('URL copied!');
+            showToast('Link berhasil disalin!');
+        });
+        $('openBtn').addEventListener('click', () => window.open(resultUrl.textContent, '_blank'));
+        $('newBtn').addEventListener('click', () => {
+            resultCard.classList.add('hidden');
+            emptyState.classList.remove('hidden');
+            $('urlInput').value = '';
+            fileInput.value = '';
         });
 
-        openBtn.addEventListener('click', () => window.open(resultUrl.textContent, '_blank'));
-        clearBtn.addEventListener('click', () => {
-            history = [];
-            localStorage.setItem('kayz_scraper_history', '[]');
-            renderHistory();
-            showToast('History cleared');
-        });
+        // --- CORE LOGIC ---
 
-        // Core Logic
-        function showLoading(text) {
-            idleState.classList.add('hidden');
-            loadingState.classList.remove('hidden');
-            loadingState.classList.add('flex'); // ensure flex display
-            loadingText.textContent = text;
-        }
-
-        function hideLoading() {
-            idleState.classList.remove('hidden');
-            loadingState.classList.add('hidden');
-            loadingState.classList.remove('flex');
-        }
-
-        function showResult(url, name, size) {
-            resultUrl.textContent = url;
-            fileName.textContent = name;
-            fileSize.textContent = formatSize(size);
-            
-            emptyState.classList.add('hidden');
-            resultCard.classList.remove('hidden');
-            
-            saveHistory(name, url, size);
-        }
-
-        function showToast(msg) {
-            toastText.textContent = msg;
-            toastContainer.classList.remove('hidden');
-            setTimeout(() => toastContainer.classList.add('hidden'), 3000);
+        function toggleLoading(show, text = "Processing...") {
+            idleState.classList.toggle('hidden', show);
+            loadingState.classList.toggle('hidden', !show);
+            if(show) loadingText.textContent = text;
         }
 
         async function processFile(file) {
-            if(!file.type.startsWith('image/')) return showToast('File must be an image');
-            if(file.size > 10000000) return showToast('Max size 10MB');
+            if (!file.type.startsWith('image/')) return showToast('File harus gambar!');
+            if (file.size > 10000000) return showToast('Maksimal 10MB!');
 
-            showLoading('Reading file...');
-            
             const reader = new FileReader();
-            reader.onload = async (e) => {
+            reader.onload = (e) => {
                 previewImg.src = e.target.result;
-                await uploadImage(e.target.result, file.name, file.size);
+                uploadImage(e.target.result, file.type);
             };
             reader.readAsDataURL(file);
         }
 
-        async function processUrl() {
-            const url = urlInput.value.trim();
-            if(!url) return showToast('Please enter a URL');
-
-            showLoading('Fetching image...');
+        async function processUrl(url) {
+            toggleLoading(true, "Fetching image...");
+            
+            // Proxy untuk bypass CORS
+            const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
             
             try {
-                // Use AllOrigins proxy to bypass CORS for fetching
-                const proxy = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
-                const res = await fetch(proxy);
+                const res = await fetch(proxyUrl);
                 const blob = await res.blob();
                 
-                if(!blob.type.startsWith('image/')) throw new Error('Not an image');
+                if (!blob.type.startsWith('image/')) throw new Error("Not an image");
                 
                 const reader = new FileReader();
-                reader.onload = async (e) => {
+                reader.onload = (e) => {
                     previewImg.src = e.target.result;
-                    const name = url.split('/').pop().split('?')[0] || 'scraped.png';
-                    await uploadImage(e.target.result, name, blob.size);
+                    uploadImage(e.target.result, blob.type);
                 };
                 reader.readAsDataURL(blob);
-            } catch(err) {
-                hideLoading();
-                showToast('Failed to fetch URL');
+            } catch (err) {
+                toggleLoading(false);
+                showToast("Gagal mengambil gambar dari URL");
                 console.error(err);
             }
         }
 
-        // Upload Logic (Telegraph & TmpFiles fallback)
-        async function uploadImage(base64, name, size) {
-            showLoading('Uploading to server...');
-            
-            // Convert Base64 to Blob for upload
+        async function uploadImage(base64, mimeType) {
+            toggleLoading(true, "Connecting to Server...");
+
+            // Parsing Base64
             const parts = base64.split(',');
-            const mime = parts[0].match(/:(.*?);/)[1];
             const bstr = atob(parts[1]);
             let n = bstr.length;
             const u8arr = new Uint8Array(n);
             while(n--){ u8arr[n] = bstr.charCodeAt(n); }
-            const blob = new Blob([u8arr], {type: mime});
 
-            let uploadedUrl = null;
+            // Tentukan extension
+            let ext = "jpg";
+            if (mimeType.includes("png")) ext = "png";
+            if (mimeType.includes("gif")) ext = "gif";
+            if (mimeType.includes("webp")) ext = "webp";
 
-            // 1. Try Telegraph (Fast, Direct Link, CORS Friendly)
-            try {
-                const fd = new FormData();
-                fd.append('file', blob, name);
-                
-                const res = await fetch('https://telegra.ph/upload', { method: 'POST', body: fd });
-                const data = await res.json();
-                if(data && data[0] && data[0].src) {
-                    uploadedUrl = 'https://telegra.ph' + data[0].src;
-                }
-            } catch(e) { console.warn('Telegraph failed, trying fallback...', e); }
-
-            // 2. Fallback: TmpFiles (If Telegraph fails)
-            if(!uploadedUrl) {
-                showLoading('Trying backup server...');
-                try {
-                    const fd = new FormData();
-                    fd.append('file', blob, name);
-                    
-                    const res = await fetch('https://tmpfiles.org/api/v1/upload', { method: 'POST', body: fd });
-                    const data = await res.json();
-                    if(data.status === 'success' && data.data && data.data.url) {
-                        // TmpFiles provides a view page. Convert to direct link.
-                        // URL format: https://tmpfiles.org/12345/file.png -> https://tmpfiles.org/dl/12345/file.png
-                        // But for embedding, their standard link often works with proper headers or simple dl modification.
-                        // Let's use the dl endpoint for reliability.
-                        uploadedUrl = data.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
-                    }
-                } catch(e) { console.error('TmpFiles failed', e); }
-            }
-
-            hideLoading();
-
-            if(uploadedUrl) {
-                showResult(uploadedUrl, name, size);
-                showToast('Upload success!');
-            } else {
-                showToast('Upload failed. Check console.');
-            }
-        }
-
-        // History Management
-        function saveHistory(name, url, size) {
-            history.unshift({ name, url, size, time: Date.now() });
-            if(history.length > 5) history.pop();
-            localStorage.setItem('kayz_scraper_history', JSON.stringify(history));
-            renderHistory();
-        }
-
-        function renderHistory() {
-            if(history.length === 0) {
-                historyList.innerHTML = '<p class="text-xs text-[var(--muted)] text-center py-4 opacity-50">No history yet</p>';
-                return;
-            }
+            // --- RAHASIA "BRANDING" ---
+            // Kita ubah nama file secara manual sebelum upload
+            // Nama file ini akan menjadi bagian dari URL Telegraph
+            const customFileName = generateBrandName().replace('.jpg', `.${ext}`);
             
-            historyList.innerHTML = history.map(h => `
-                <div class="history-item rounded-lg p-3 flex items-center gap-3 cursor-pointer" onclick="copyText('${h.url}')">
-                    <div class="w-10 h-10 rounded bg-black/20 overflow-hidden flex-shrink-0">
-                        <img src="${h.url}" class="w-full h-full object-cover" onerror="this.style.display='none'">
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <p class="text-sm font-medium truncate">${h.name}</p>
-                        <p class="text-xs text-[var(--muted)] mono truncate">${h.url}</p>
-                    </div>
-                </div>
-            `).join('');
-        }
+            const blob = new Blob([u8arr], { type: mimeType });
 
-        window.copyText = (text) => {
-            navigator.clipboard.writeText(text);
-            showToast('URL copied!');
-        };
+            // UPLOAD KE TELEGRAPH
+            const formData = new FormData();
+            formData.append('file', blob, customFileName); // Inject custom filename here
+
+            try {
+                const res = await fetch('https://telegra.ph/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await res.json();
+
+                if (data && data[0] && data[0].src) {
+                    const finalUrl = "https://telegra.ph" + data[0].src;
+                    
+                    // Update UI
+                    toggleLoading(false);
+                    fileName.textContent = customFileName;
+                    fileSize.textContent = formatSize(blob.size);
+                    resultUrl.textContent = finalUrl;
+                    
+                    emptyState.classList.add('hidden');
+                    resultCard.classList.remove('hidden');
+                    
+                    showToast("Upload Sukses!");
+                } else {
+                    throw new Error("Server response invalid");
+                }
+            } catch (err) {
+                toggleLoading(false);
+                showToast("Upload gagal, coba lagi.");
+                console.error(err);
+            }
+        }
     </script>
 </body>
 </html>
